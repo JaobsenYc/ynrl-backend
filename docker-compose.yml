@@ -1,0 +1,25 @@
+version: '3'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.development
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - '27081:80'
+    container_name: wxcloud_ynrl-koa
+    labels:
+      - wxPort=27082
+      - hostPort=27081
+      - wxcloud=ynrl-koa
+      - role=container
+    environment:
+      - MYSQL_USERNAME=ynrl_query
+
+      - MYSQL_ADDRESS=10.8.103.154:3306
+networks:
+  default:
+    external:
+      name: wxcb0
