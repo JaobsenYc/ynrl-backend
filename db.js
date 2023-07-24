@@ -5,7 +5,7 @@
 
   const [host, port] = MYSQL_ADDRESS.split(":");
 
-  const sequelize = new Sequelize("ynrl_test", MYSQL_USERNAME, MYSQL_PASSWORD, {
+  const sequelize = new Sequelize("ynrl", MYSQL_USERNAME, MYSQL_PASSWORD, {
     host,
     port,
     dialect: "mysql" /* one of 'mysql' | 'mariadb' | 'postgres' | 'mssql' */,
