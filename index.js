@@ -4,7 +4,7 @@ const logger = require("koa-logger");
 const bodyParser = require("koa-bodyparser");
 const fs = require("fs");
 const path = require("path");
-const { init: initDB, Communities , Users} = require("./db");
+const { init: initDB, Communities , Users, Households} = require("./db");
 
 const router = new Router();
 
@@ -151,37 +151,70 @@ router.get("/api/users/:userId/details", async (ctx) => {
 });
 
 
-// // 更新计数
-// router.post("/api/count", async (ctx) => {
-//   const { request } = ctx;
-//   const { action } = request.body;
-//   if (action === "inc") {
-//     await Communities.create();
-//   } else if (action === "clear") {
-//     await Communities.destroy({
-//       truncate: true,
-//     });
-//   }
+//创建保存的tag
+// 创建保存的tag
+router.post("/api/users/households", async (ctx) => {
+  try {
+    const { householdId, tag } = ctx.request.body;
+    const openId = ctx.headers['x-wx-openid'];
 
-//   ctx.body = {
-//     code: 0,
-//     data: await Communities.count(),
-//   };
-// });
+    if (!openId || !householdId) {
+      ctx.throw(503, "OpenId或HouseholdId不能为空");
+    }
 
-// // 获取计数
-// router.get("/api/count", async (ctx) => {
-//   const result = await Communities.count();
+    // 如果没有提供tag，则设置为默认值
+    let householdTag = tag || "我家";
 
-//   ctx.body = {
-//     code: 0,
-//     data: result,
-//   };
-// });
+    // 检查household是否已存在
+    const [household, created] = await Households.findOrCreate({
+      where: { openId, householdId },
+      defaults: { tag: householdTag }
+    });
+
+    // 如果household存在但tag不同，则进行更新
+    if (!created && household.tag !== householdTag) {
+      household.tag = householdTag;
+      await household.save();
+    }
+
+    ctx.status = created ? 201 : 200;
+    ctx.body = household;
+  } catch (err) {
+    ctx.throw(err.status || 500, err.message || "发生了错误");
+  }
+});
+
+// 删除保存的tag
+router.delete("/api/users/households", async (ctx) => {
+  try {
+    const { householdId } = ctx.request.body;
+    const openId = ctx.headers['x-wx-openid'];
+
+    if (!openId || !householdId) {
+      ctx.throw(503, "OpenId或HouseholdId不能为空");
+    }
+
+    // 在数据库中查找并删除对应的household
+    const deletedCount = await Households.destroy({
+      where: { openId, householdId }
+    });
+
+    if (deletedCount === 0) {
+      ctx.throw(404, "找不到要删除的household");
+    }
+
+    ctx.status = 200;
+    ctx.body = { message: "成功删除household" };
+  } catch (err) {
+    ctx.throw(err.status || 500, err.message || "发生了错误");
+  }
+});
+
+
 
 // 小程序调用，获取微信 Open ID
 router.get("/api/wx_openid", async (ctx) => {
-  if (ctx.request.headers["x-wx-source"]) {
+  if (ctx.request.headers[" "]) {
     ctx.body = ctx.request.headers["x-wx-openid"];
   }
 });
