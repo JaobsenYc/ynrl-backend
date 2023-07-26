@@ -151,7 +151,32 @@ router.get("/api/users/:userId/details", async (ctx) => {
 });
 
 
-//创建保存的tag
+//查询所有的households
+router.get("/api/users/households", async (ctx) => {
+  try {
+    const openId = ctx.headers['x-wx-openid'];
+
+    if (!openId) {
+      ctx.throw(400, "OpenId不能为空");
+    }
+
+    // 从数据库中获取所有的household和tag
+    const households = await Households.findAll({
+      where: { openId },
+      attributes: ['householdId', 'tag']
+    });
+
+    if (!households) {
+      ctx.throw(404, "找不到对应的households");
+    }
+
+    ctx.status = 200;
+    ctx.body = households;
+  } catch (err) {
+    ctx.throw(err.status || 500, err.message || "发生了错误");
+  }
+});
+
 // 创建保存的tag
 router.post("/api/users/households", async (ctx) => {
   try {
